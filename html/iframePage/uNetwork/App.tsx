@@ -2,11 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 // @ts-ignore
 import { VTablePro } from 'virtualized-table';
 import { Button, Input, Modal, Radio, Space } from 'antd';
-import { FilterOutlined, PauseCircleFilled, PlayCircleTwoTone, StopOutlined } from '@ant-design/icons';
+import { FilterOutlined, PauseCircleFilled, PlayCircleTwoTone, StopOutlined, DownloadOutlined } from '@ant-design/icons';
 import 'antd/dist/antd.css';
 import './App.css';
 import RequestDrawer from './RequestDrawer';
 import { defaultInterface, AjaxDataListObject, DefaultInterfaceObject } from '../common/value';
+import { exportJSON } from '../main/utils/exportJson';
 
 interface AddInterceptorParams {
   ajaxDataList: AjaxDataListObject[],
@@ -278,6 +279,65 @@ export default () => {
     setCurrRecord(record);
     setDrawerOpen(true);
   };
+
+  // 导出请求记录为JSON文件
+  const exportRequests = async () => {
+    // 获取响应内容的辅助函数
+    const getResponseContent = (request: any) => {
+      return new Promise((resolve) => {
+        if (request.getContent) {
+          request.getContent((content: any) => {
+            // 尝试解析JSON响应
+            try {
+              // 如果内容是JSON字符串，将其解析为对象
+              const parsedContent = JSON.parse(content);
+              resolve(parsedContent);
+            } catch (e) {
+              // 如果不是有效的JSON，保持原始内容
+              resolve(content);
+            }
+          });
+        } else {
+          resolve(null);
+        }
+      });
+    };
+    
+    // 移除URL中的查询参数
+    const getBaseUrl = (url: string) => {
+      try {
+        const urlObj = new URL(url);
+        return `${urlObj.origin}${urlObj.pathname}`;
+      } catch (e) {
+        // 如果URL解析失败，返回原始URL
+        return url;
+      }
+    };
+    
+    // 准备导出数据基本结构
+    const exportData = {
+      exportedAt: new Date().toISOString(),
+      totalRequests: uNetwork.length,
+      requests: []
+    };
+    
+    // 遍历请求并获取响应内容
+    for (const request of uNetwork) {
+      const responseContent = await getResponseContent(request);
+      const method = request.request.method.toLowerCase();
+      
+      // 只添加简化的请求信息
+      exportData.requests.push({
+        url: getBaseUrl(request.request.url),
+        method: method,
+        response: responseContent // 已解析为原始格式（如果是JSON）
+      });
+    }
+    
+    // 使用现有的导出函数
+    exportJSON(`ajax-requests-${new Date().toISOString().replace(/:/g, '-')}`, exportData);
+  };
+
   const columns = getColumns({
     onAddInterceptorClick,
     onRequestUrlClick,
@@ -298,6 +358,15 @@ export default () => {
         title="Clear"
         icon={<StopOutlined/>}
         onClick={() => setUNetwork([])}
+      />
+      {/* 新增导出按钮 */}
+      <Button
+        type="text"
+        shape="circle"
+        title="Export Requests"
+        icon={<DownloadOutlined/>}
+        onClick={() => exportRequests()}
+        disabled={uNetwork.length === 0}
       />
       <Input
         placeholder="Filter RegExp"
