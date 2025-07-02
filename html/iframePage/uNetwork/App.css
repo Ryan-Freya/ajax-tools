@@ -1,4 +1,3 @@
-
 .ajax-tools-devtools-action-bar {
   padding: 0 12px;
   background: #f4f6f9;
@@ -8,4 +7,31 @@
 .ajax-tools-devtools-text-btn:hover {
   color: #2C85D9;
   cursor: pointer;
+}
+
+/* 过滤行样式：整行置灰效果 */
+.ajax-tools-filtered-row {
+  background-color: #f8f9fa !important;
+  opacity: 0.6 !important;
+  border-left: 3px solid #dee2e6 !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.ajax-tools-filtered-row:hover {
+  background-color: #e9ecef !important;
+  opacity: 0.75 !important;
+  border-left-color: #adb5bd !important;
+}
+
+/* 确保过滤行内的所有文本都使用相同的颜色 */
+.ajax-tools-filtered-row td {
+  color: #6c757d !important;
+}
+
+.ajax-tools-filtered-row .ajax-tools-devtools-text-btn {
+  color: #6c757d !important;
+}
+
+.ajax-tools-filtered-row .ajax-tools-devtools-text-btn:hover {
+  color: #495057 !important;
 }

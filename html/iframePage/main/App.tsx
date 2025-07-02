@@ -46,7 +46,7 @@ function App() {
         setAjaxToolsSkin(ajaxToolsSkin);
       });
     }
-    if (chrome.runtime) {
+    if (chrome.runtime && chrome.runtime.onMessage) {
       // 接收uNetwork/App.jsx发来的数据（在uNetWork面板中可以添加拦截数据更新页面）
       chrome.runtime.onMessage.addListener((request) => {
         const { type, to, ajaxDataList } = request;
