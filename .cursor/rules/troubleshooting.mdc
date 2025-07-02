@@ -1,0 +1,193 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# 故障排除和常见问题
+
+## 常见开发问题
+
+### 1. 扩展加载问题
+
+#### 问题：修改后扩展不生效
+**解决方案**：
+- 在chrome://extensions/中点击刷新按钮重新加载扩展
+- 检查[manifest.json](mdc:manifest.json)语法是否正确
+- 确保所有引用的文件路径存在
+
+#### 问题：Content Script注入失败
+**检查清单**：
+- 确认[content.js](mdc:content.js)文件存在且语法正确
+- 检查manifest.json中content_scripts配置
+- 验证host_permissions权限设置
+
+### 2. Ajax拦截问题
+
+#### 问题：请求拦截不生效
+**调试步骤**：
+1. 检查[pageScripts/index.js](mdc:pageScripts/index.js)是否正确注入
+2. 在浏览器控制台查看是否有JavaScript错误
+3. 确认拦截规则的URL模式和HTTP方法匹配
+
+```javascript
+// 调试代码示例
+console.log('拦截规则:', rules);
+console.log('当前请求:', { url, method });
+console.log('匹配结果:', isMatch);
+```
+
+#### 问题：响应修改不生效
+**常见原因**：
+- JavaScript语法错误导致执行失败
+- Mock.js语法使用错误
+- 返回值格式不正确
+
+### 3. DevTools面板问题
+
+#### 问题：U-Network面板不显示请求
+**检查项**：
+- 确认DevTools面板已正确创建
+- 检查[devtoolsPage/index.js](mdc:devtoolsPage/index.js)中的面板注册代码
+- 验证消息通信是否正常
+
+#### 问题：面板UI样式异常
+**解决方案**：
+- 检查Ant Design组件版本兼容性
+- 确认CSS样式文件正确加载
+- 验证构建产物是否完整
+
+### 4. 构建和打包问题
+
+#### 问题：Vite构建失败
+**常见解决方案**：
+```bash
+cd html/iframePage
+rm -rf node_modules
+npm install
+npm run build
+```
+
+#### 问题：TypeScript类型错误
+**检查清单**：
+- 确认[tsconfig.json](mdc:html/iframePage/tsconfig.json)配置正确
+- 安装必要的类型定义包
+- 检查Chrome扩展API类型声明
+
+### 5. 权限和安全问题
+
+#### 问题：declarativeNetRequest规则不生效
+**检查项**：
+- 确认manifest.json中declarativeNetRequest权限已声明
+- 验证规则JSON格式正确性
+- 检查规则ID是否唯一
+
+#### 问题：跨域请求被阻止
+**解决方案**：
+- 确认host_permissions包含目标域名
+- 检查web_accessible_resources配置
+- 验证Content Security Policy设置
+
+## 性能优化建议
+
+### 1. 内存使用优化
+```javascript
+// 避免内存泄漏
+const cleanupListeners = () => {
+  window.removeEventListener('beforeunload', handleBeforeUnload);
+  // 清理其他事件监听器
+};
+
+// 限制存储的请求记录数量
+const MAX_RECORDS = 1000;
+if (requestRecords.length > MAX_RECORDS) {
+  requestRecords.splice(0, requestRecords.length - MAX_RECORDS);
+}
+```
+
+### 2. 拦截性能优化
+```javascript
+// 使用Set进行快速URL匹配
+const enabledUrls = new Set(rules.map(rule => rule.url));
+
+// 避免重复处理相同请求
+const processedRequests = new WeakSet();
+if (processedRequests.has(request)) {
+  return;
+}
+processedRequests.add(request);
+```
+
+## 调试工具和技巧
+
+### 1. Chrome扩展调试
+```javascript
+// 在Service Worker中添加日志
+console.log('[Service Worker]', message);
+
+// 在Content Script中添加日志
+console.log('[Content Script]', data);
+
+// 在Page Script中添加日志
+console.log('[Page Script]', interceptedRequest);
+```
+
+### 2. 网络请求调试
+- 使用Chrome DevTools的Network面板查看原始请求
+- 在U-Network面板中查看拦截的请求
+- 对比原始响应和修改后的响应
+
+### 3. 存储调试
+```javascript
+// 查看Chrome存储内容
+chrome.storage.local.get(null, (result) => {
+  console.log('Storage content:', result);
+});
+
+// 清理存储数据
+chrome.storage.local.clear();
+```
+
+## 版本兼容性
+
+### Chrome版本要求
+- 最低支持Chrome 88+（Manifest V3支持）
+- 推荐Chrome 100+（完整的declarativeNetRequest支持）
+
+### API兼容性检查
+```javascript
+// 检查API可用性
+if (chrome.declarativeNetRequest) {
+  // 使用declarativeNetRequest API
+} else {
+  // 降级处理或提示用户升级
+}
+```
+
+## 错误上报和监控
+
+### 错误收集
+```javascript
+// 全局错误处理
+window.addEventListener('error', (event) => {
+  console.error('Ajax Interceptor Error:', {
+    message: event.message,
+    filename: event.filename,
+    lineno: event.lineno,
+    stack: event.error?.stack
+  });
+});
+
+// Promise错误处理
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled Promise Rejection:', event.reason);
+});
+```
+
+### 性能监控
+```javascript
+// 监控拦截处理时间
+const startTime = performance.now();
+// ... 拦截处理逻辑 ...
+const endTime = performance.now();
+console.log(`拦截处理耗时: ${endTime - startTime}ms`);
+```

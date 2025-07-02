@@ -1,0 +1,214 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 代码模式和最佳实践
+
+## Ajax拦截模式
+
+### 1. 基础拦截模式
+在[pageScripts/index.js](mdc:ajax-tools/pageScripts/index.js)中实现的核心模式：
+
+```javascript
+// XMLHttpRequest拦截
+const originalXHR = window.XMLHttpRequest;
+window.XMLHttpRequest = function() {
+  const xhr = new originalXHR();
+  // 拦截响应处理
+  const originalOpen = xhr.open;
+  xhr.open = function(method, url, ...args) {
+    // 请求拦截逻辑
+    return originalOpen.apply(this, [method, url, ...args]);
+  };
+  return xhr;
+};
+
+// Fetch API拦截
+const originalFetch = window.fetch;
+window.fetch = function(url, options = {}) {
+  // 请求修改和响应拦截逻辑
+  return originalFetch.apply(this, arguments).then(response => {
+    // 响应处理逻辑
+    return response;
+  });
+};
+```
+
+### 2. 规则匹配模式
+```javascript
+// URL匹配（支持正则表达式）
+const matchUrl = (pattern, url) => {
+  if (pattern instanceof RegExp) {
+    return pattern.test(url);
+  }
+  return url.includes(pattern);
+};
+
+// 方法匹配
+const matchMethod = (ruleMethod, requestMethod) => {
+  return ruleMethod === 'ALL' || 
+         ruleMethod.toLowerCase() === requestMethod.toLowerCase();
+};
+```
+
+## React组件模式
+
+### 1. 通用组件结构
+在[html/iframePage/](mdc:ajax-tools/html/iframePage)中使用的模式：
+
+```typescript
+// 使用Ant Design组件
+import { Button, Input, Table } from 'antd';
+import { useState, useEffect } from 'react';
+
+const ComponentName: React.FC = () => {
+  const [state, setState] = useState(initialState);
+  
+  useEffect(() => {
+    // 初始化逻辑
+  }, []);
+  
+  return (
+    <div className="ajax-tools-container">
+      {/* 组件内容 */}
+    </div>
+  );
+};
+```
+
+### 2. 状态管理模式
+```typescript
+// 本地状态管理
+const [rules, setRules] = useState([]);
+const [filterKey, setFilterKey] = useState('');
+const [selectedRecord, setSelectedRecord] = useState(null);
+
+// Chrome storage API使用
+const saveToStorage = (key: string, data: any) => {
+  chrome.storage.local.set({ [key]: data });
+};
+
+const loadFromStorage = (key: string) => {
+  return chrome.storage.local.get([key]);
+};
+```
+
+## 通信模式
+
+### 1. Content Script与Page Script通信
+```javascript
+// Content Script (content.js)
+window.addEventListener('message', (event) => {
+  if (event.source !== window) return;
+  if (event.data.type === 'AJAX_INTERCEPTOR') {
+    // 处理来自页面脚本的消息
+  }
+});
+
+// Page Script (pageScripts/index.js)
+window.postMessage({
+  type: 'AJAX_INTERCEPTOR',
+  action: 'RESPONSE_MODIFIED',
+  data: responseData
+}, '*');
+```
+
+### 2. Service Worker通信
+```javascript
+// 发送消息到service worker
+chrome.runtime.sendMessage({
+  action: 'UPDATE_RULES',
+  rules: newRules
+});
+
+// Service Worker (service_worker.js)
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'UPDATE_RULES') {
+    // 处理规则更新
+    sendResponse({ success: true });
+  }
+});
+```
+
+## 错误处理模式
+
+### 1. Ajax拦截错误处理
+```javascript
+try {
+  // 响应修改逻辑
+  const modifiedResponse = processResponse(originalResponse);
+  return modifiedResponse;
+} catch (error) {
+  console.error('Ajax拦截错误:', error);
+  // 返回原始响应作为回退
+  return originalResponse;
+}
+```
+
+### 2. UI错误边界
+```typescript
+const [error, setError] = useState<string | null>(null);
+
+const handleError = (error: Error) => {
+  setError(error.message);
+  console.error('UI错误:', error);
+};
+
+// 在组件中显示错误
+{error && (
+  <Alert 
+    message="操作失败" 
+    description={error} 
+    type="error" 
+    closable 
+    onClose={() => setError(null)}
+  />
+)}
+```
+
+## 性能优化模式
+
+### 1. 请求去重
+```javascript
+const requestCache = new Map();
+
+const getCacheKey = (url, method, body) => {
+  return `${method}:${url}:${JSON.stringify(body)}`;
+};
+```
+
+### 2. 大量数据处理
+```typescript
+// 虚拟化列表处理大量网络请求记录
+import { VTable } from '@visactor/vtable';
+
+// 分页加载
+const [currentPage, setCurrentPage] = useState(1);
+const [pageSize] = useState(50);
+```
+
+## 测试模式
+
+### 1. Mock数据生成
+使用[mock.js](mdc:ajax-tools/html/iframePage/mock.js)语法：
+
+```javascript
+const mockData = Mock.mock({
+  'list|10-20': [{
+    'id|+1': 1,
+    'name': '@cname',
+    'email': '@email',
+    'status|1': ['active', 'inactive']
+  }]
+});
+```
+
+### 2. 规则测试
+```javascript
+const testRule = (rule, request) => {
+  const isMatch = matchUrl(rule.pattern, request.url) && 
+                 matchMethod(rule.method, request.method);
+  return isMatch;
+};
+```

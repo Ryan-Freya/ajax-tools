@@ -1,0 +1,49 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Ajax Interceptor Tools - 项目结构指南
+
+这是一个Chrome扩展项目，用于拦截和修改Ajax请求的响应。
+
+## 核心文件结构
+
+### Chrome扩展核心文件
+- [manifest.json](mdc:ajax-tools/manifest.json) - 扩展清单文件，定义权限、组件和配置
+- [content.js](mdc:ajax-tools/content.js) - 内容脚本，注入到所有网页中
+- [service_worker.js](mdc:ajax-tools/service_worker.js) - 后台服务工作脚本（Manifest V3）
+
+### DevTools页面
+- [devtoolsPage/index.html](mdc:ajax-tools/devtoolsPage/index.html) - 开发者工具页面入口
+- [devtoolsPage/index.js](mdc:ajax-tools/devtoolsPage/index.js) - DevTools页面逻辑
+
+### 页面脚本
+- [pageScripts/index.js](mdc:ajax-tools/pageScripts/index.js) - 主要的页面注入脚本，实现Ajax拦截核心功能
+
+### 主要界面
+- [html/iframePage/](mdc:ajax-tools/html/iframePage) - 主要的配置和管理界面
+  - [main/](mdc:ajax-tools/html/iframePage/main) - 规则配置主页面
+  - [uNetwork/](mdc:ajax-tools/html/iframePage/uNetwork) - 网络请求监控面板
+  - [declarativeNetRequest/](mdc:ajax-tools/html/iframePage/declarativeNetRequest) - 声明式网络请求管理
+  - [common/](mdc:ajax-tools/html/iframePage/common) - 通用组件和工具函数
+
+### 构建配置
+- [html/iframePage/package.json](mdc:ajax-tools/html/iframePage/package.json) - 前端依赖管理
+- [html/iframePage/vite.config.js](mdc:ajax-tools/html/iframePage/vite.config.js) - Vite构建配置
+- [html/iframePage/tsconfig.json](mdc:ajax-tools/html/iframePage/tsconfig.json) - TypeScript配置
+
+### 文档
+- [README.md](mdc:ajax-tools/README.md) - 英文项目文档
+- [README-zh.md](mdc:ajax-tools/README-zh.md) - 中文项目文档
+- [详细设计.md](mdc:ajax-tools/详细设计.md) - 详细的功能设计文档
+- [CHANGELOG.md](mdc:ajax-tools/CHANGELOG.md) - 版本更新记录
+
+## 主要功能模块
+
+1. **Ajax拦截**: 通过content.js和pageScripts实现对XMLHttpRequest和fetch的拦截
+2. **响应修改**: 支持JSON和JavaScript格式的响应修改，包含mock.js语法支持
+3. **请求修改**: 支持修改请求URL、headers和body
+4. **DevTools集成**: U-Network面板提供图形化的请求监控和管理
+5. **声明式网络请求**: 使用chrome.declarativeNetRequest API进行高级网络控制
+6. **规则管理**: 支持导入/导出规则配置，群组和规则排序

@@ -1,0 +1,67 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Chrome扩展架构说明
+
+## Manifest V3架构
+
+本项目使用Chrome Extension Manifest V3架构，核心组件包括：
+
+### 1. Service Worker ([service_worker.js](mdc:ajax-tools/service_worker.js))
+- 后台脚本，替代Manifest V2中的background页面
+- 处理扩展生命周期事件
+- 管理declarativeNetRequest规则
+- 与content scripts和DevTools通信
+
+### 2. Content Scripts ([content.js](mdc:ajax-tools/content.js))
+- 注入到所有网页（`<all_urls>`）
+- 在document_start时机运行
+- 负责注入页面脚本并建立通信桥梁
+- all_frames: true，在所有iframe中也会运行
+
+### 3. Page Scripts ([pageScripts/index.js](mdc:ajax-tools/pageScripts/index.js))
+- 运行在页面的主世界（main world）上下文中
+- 直接拦截XMLHttpRequest和fetch API
+- 实现Ajax请求的实时拦截和响应修改
+- 通过window.postMessage与content script通信
+
+### 4. DevTools Page ([devtoolsPage/](mdc:ajax-tools/devtoolsPage))
+- 扩展开发者工具功能
+- 创建U-Network面板用于网络请求监控
+- 提供图形化的请求拦截管理界面
+
+### 5. Web Accessible Resources
+在[manifest.json](mdc:ajax-tools/manifest.json)中定义的可访问资源：
+- `html/iframePage/dist/index.html` - 主配置页面
+- `html/iframePage/dist/declarativeNetRequest.html` - 声明式请求配置页面  
+- `pageScripts/index.js` - 页面注入脚本
+- `html/iframePage/mock.js` - Mock.js库
+- 图标字体文件
+
+## 权限说明
+
+### 必需权限
+- `storage` / `unlimitedStorage` - 存储规则配置
+- `declarativeNetRequest` 系列 - 高级网络请求控制
+- `host_permissions: ["http://*/*", "https://*/*"]` - 访问所有HTTP/HTTPS网站
+
+## 通信架构
+
+```
+Page Context (页面上下文)
+    ↕ window.postMessage
+Content Script (内容脚本)
+    ↕ chrome.runtime
+Service Worker (后台脚本)
+    ↕ chrome.devtools
+DevTools Panel (开发者工具面板)
+```
+
+## 关键技术点
+
+1. **双重拦截机制**: 结合页面脚本拦截和declarativeNetRequest API
+2. **跨上下文通信**: 通过postMessage和chrome.runtime API实现多层通信
+3. **动态规则管理**: 实时更新拦截规则无需重载扩展
+4. **Mock.js集成**: 支持强大的数据模拟语法
