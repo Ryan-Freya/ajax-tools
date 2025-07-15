@@ -20,8 +20,23 @@ interface AddInterceptorParams {
 
 // 默认过滤配置
 const defaultFilterConfig: FilterConfig = {
-  mode: 'include',
-  rules: []
+  mode: 'exclude',
+  rules: [
+    {
+      id: 'default-1',
+      pattern: '/Menu/GetMenuAllDataV2',
+      description: '默认排除菜单数据接口',
+      enabled: true,
+      type: 'string'
+    },
+    {
+      id: 'default-2', 
+      pattern: '/File/GetComponentView',
+      description: '默认排除组件视图接口',
+      enabled: true,
+      type: 'string'
+    }
+  ]
 };
 
 // 过滤逻辑函数

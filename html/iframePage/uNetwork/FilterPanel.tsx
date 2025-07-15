@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Card, 
   Radio, 
@@ -8,7 +8,6 @@ import {
   Switch, 
   Popconfirm, 
   Tag, 
-  Tooltip, 
   message,
   Collapse,
   Select
@@ -16,12 +15,10 @@ import {
 import { 
   PlusOutlined, 
   DeleteOutlined, 
-  SettingOutlined, 
   EyeOutlined,
   FilterOutlined 
 } from '@ant-design/icons';
 
-const { Panel } = Collapse;
 const { Option } = Select;
 
 export interface FilterRule {
@@ -186,23 +183,6 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
               )}
             </Space>
           </div>
-
-          {/* 快速模板 */}
-          {/* <div style={{ marginBottom: 16 }}>
-            <Space wrap>
-              <span>快速模板:</span>
-              {templates.map((template, index) => (
-                <Button
-                  key={index}
-                  size="small"
-                  onClick={() => applyTemplate(template)}
-                  title={template.description}
-                >
-                  {template.name}
-                </Button>
-              ))}
-            </Space>
-          </div> */}
 
           {/* 添加新规则 */}
           <Card size="small" title="添加过滤规则" style={{ marginBottom: 16 }}>
