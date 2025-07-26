@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket 录制测试</title>
+</head>
+<body>
+    <h1>WebSocket 录制功能测试</h1>
+    <button onclick="testWebSocket()">测试 WebSocket</button>
+    <button onclick="checkRecords()">查看录制数据</button>
+    
+    <!-- 加载页面脚本 -->
+    <script src="pageScripts/index.js"></script>
+    
+    <script>
+        function testWebSocket() {
+            // 使用 WebSocket Echo 服务进行测试
+            const ws = new WebSocket('wss://echo.websocket.org');
+            
+            ws.onopen = function() {
+                console.log('连接已建立');
+                // 发送测试消息
+                ws.send('Hello WebSocket!');
+                ws.send('{"type": "test", "data": "测试数据"}');
+            };
+            
+            ws.onmessage = function(event) {
+                console.log('收到消息:', event.data);
+                // 收到回音后关闭连接
+                setTimeout(() => ws.close(), 1000);
+            };
+            
+            ws.onclose = function() {
+                console.log('连接已关闭');
+            };
+        }
+        
+        function checkRecords() {
+            console.log('=== WebSocket 录制数据 ===');
+            console.log(ajax_tools_space.websocketDataList);
+            
+            if (ajax_tools_space.websocketDataList.length === 0) {
+                console.log('暂无录制数据，请先测试 WebSocket 连接');
+            } else {
+                ajax_tools_space.websocketDataList.forEach((record, index) => {
+                    console.log(`连接 ${index + 1}:`, record.url);
+                    console.log(`消息数量:`, record.messages.length);
+                    record.messages.forEach(msg => {
+                        console.log(`  ${msg.type}: ${msg.data} (${msg.timestamp})`);
+                    });
+                });
+            }
+        }
+    </script>
+</body>
+</html>

@@ -127,6 +127,35 @@ export default (props: RequestDrawerProps) => {
         });
       }
     }, []);
+    
+    // WebSocket 消息显示
+    if (record._resourceType === 'websocket') {
+      return (
+        <div>
+          <h4>WebSocket Messages ({(record._wsMessages || []).length})</h4>
+          {(record._wsMessages || []).map((msg: any, index: number) => (
+            <div key={index} style={{ 
+              margin: '8px 0', 
+              padding: '8px', 
+              backgroundColor: msg.type === 'sent' ? '#e6f7ff' : '#f6ffed',
+              border: `1px solid ${msg.type === 'sent' ? '#91d5ff' : '#b7eb8f'}`,
+              borderRadius: '4px'
+            }}>
+              <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                {msg.type === 'sent' ? '📤 Sent' : '📥 Received'} - {new Date(msg.timestamp).toLocaleTimeString()}
+              </div>
+              <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{formatText(msg.data)}</pre>
+            </div>
+          ))}
+          {(record._wsMessages || []).length === 0 && (
+            <div style={{ textAlign: 'center', color: '#999', padding: '20px' }}>
+              No messages yet
+            </div>
+          )}
+        </div>
+      );
+    }
+    
     return <>
       <pre>{formatText(response)}</pre>
     </>;

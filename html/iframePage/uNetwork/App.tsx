@@ -393,11 +393,54 @@ const App = () => {
   }, []);
 
   const setUNetworkData = function (request:any) {
-    if (['fetch', 'xhr'].includes(request._resourceType)) {
+    console.log('request', request);
+    if (['fetch', 'xhr', 'websocket'].includes(request._resourceType)) {
       uNetwork.push(request);
       setUNetwork([...uNetwork]);
     }
   };
+  
+  // 监听页面脚本的 WebSocket 录制数据
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      console.log('event', event);
+      if (event.data.type === 'websocketRecord') {
+        const { wsId, eventType, eventData, timestamp } = event.data.data;
+        
+        if (eventType === 'connection') {
+          // 添加新的 WebSocket 连接记录
+          const wsRecord = {
+            _resourceType: 'websocket',
+            request: {
+              url: eventData.url,
+              method: 'WS'
+            },
+            response: {
+              status: 'connecting'
+            },
+            _wsId: wsId,
+            _wsMessages: []
+          };
+          setUNetworkData(wsRecord);
+        } else if (['sent', 'received'].includes(eventType)) {
+          // 更新现有 WebSocket 连接的消息
+          setUNetwork(prev => prev.map(item => {
+            if (item._wsId === wsId) {
+              return {
+                ...item,
+                _wsMessages: [...(item._wsMessages || []), { type: eventType, data: eventData, timestamp }],
+                response: { ...item.response, status: 'connected' }
+              };
+            }
+            return item;
+          }));
+        }
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
   useEffect(() => {
     if (chrome.devtools) {
       if (recording) {

@@ -3,7 +3,9 @@ const ajax_tools_space = {
   ajaxToolsSwitchOn: true,
   ajaxToolsSwitchOnNot200: true,
   ajaxDataList: [],
+  websocketDataList: [], // WebSocket 录制数据
   originalXHR: window.XMLHttpRequest,
+  originalWebSocket: window.WebSocket,
   // "/^t.*$/" or "^t.*$" => new RegExp
   strToRegExp: (regStr) => {
     let regexp = new RegExp('');
@@ -77,6 +79,74 @@ const ajax_tools_space = {
       return open && matchedMethod && matchedRequest;
     });
   },
+  myWebSocket: function(url, protocols) {
+    const ws = new ajax_tools_space.originalWebSocket(url, protocols);
+    const wsId = Math.random().toString(36).substring(2, 15);
+    
+    // 录制连接信息
+    const wsRecord = { url, protocols, timestamp: new Date().toISOString(), messages: [] };
+    ajax_tools_space.websocketDataList.push(wsRecord);
+    
+    // 发送连接事件到 DevTools
+    window.postMessage({
+      type: 'websocketRecord',
+      data: { wsId, eventType: 'connection', eventData: { url, protocols }, timestamp: new Date().toISOString() }
+    }, '*');
+    
+    // 使用 Proxy 统一拦截所有方法和属性
+    return new Proxy(ws, {
+      set(target, prop, value) {
+        if (prop === 'onmessage' && typeof value === 'function') {
+          target[prop] = function(event) {
+            wsRecord.messages.push({ type: 'received', data: event.data, timestamp: new Date().toISOString() });
+            console.log(`WebSocket Receive [${url}]:`, event.data);
+            window.postMessage({
+              type: 'websocketRecord',
+              data: { wsId, eventType: 'received', eventData: event.data, timestamp: new Date().toISOString() }
+            }, '*');
+            return value.call(this, event);
+          };
+        } else {
+          target[prop] = value;
+        }
+        return true;
+      },
+      get(target, prop) {
+        if (prop === 'send') {
+          return function(data) {
+            wsRecord.messages.push({ type: 'sent', data, timestamp: new Date().toISOString() });
+            console.log(`WebSocket Send [${url}]:`, data);
+            window.postMessage({
+              type: 'websocketRecord',
+              data: { wsId, eventType: 'sent', eventData: data, timestamp: new Date().toISOString() }
+            }, '*');
+            return target.send.call(target, data);
+          };
+        } else if (prop === 'addEventListener') {
+          return function(type, listener, options) {
+            if (type === 'message' && typeof listener === 'function') {
+              const wrappedListener = function(event) {
+                wsRecord.messages.push({ type: 'received', data: event.data, timestamp: new Date().toISOString() });
+                console.log(`WebSocket Receive [${url}]:`, event.data);
+                window.postMessage({
+                  type: 'websocketRecord',
+                  data: { wsId, eventType: 'received', eventData: event.data, timestamp: new Date().toISOString() }
+                }, '*');
+                return listener.call(this, event);
+              };
+              return target.addEventListener.call(target, type, wrappedListener, options);
+            }
+            return target.addEventListener.call(target, type, listener, options);
+          };
+        } else if (prop === 'close') {
+          return function(code, reason) {
+            return target.close.call(target, code, reason);
+          };
+        }
+        return target[prop];
+      }
+    });
+  },
   myXHR: function () {
     const modifyResponse = () => {
       const [method, requestUrl] = this._openArgs;
@@ -127,7 +197,6 @@ const ajax_tools_space = {
         // xhr.onload = (...args) => {
         //   // 开启拦截
         //   modifyResponse();
-        //   this.onload && this.onload.apply(this, args);
         // }
         // this.onload = null;
         // continue;
@@ -345,9 +414,11 @@ window.addEventListener("message", function (event) {
     }
     window.XMLHttpRequest = ajax_tools_space.myXHR;
     window.fetch = ajax_tools_space.myFetch;
+    window.WebSocket = ajax_tools_space.myWebSocket;
   } else {
     window.XMLHttpRequest = ajax_tools_space.originalXHR;
     window.fetch = ajax_tools_space.originalFetch;
+    window.WebSocket = ajax_tools_space.originalWebSocket;
   }
 
 }, false);
