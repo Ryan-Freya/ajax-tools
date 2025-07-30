@@ -1,0 +1,21 @@
+{
+  "name": "ajax-tools",
+  "version": "1.0.0",
+  "description": "English | [简体中文](./README-zh.md)",
+  "main": "content.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node --loader ts-node/esm scripts/build.ts && node --loader ts-node/esm scripts/publish.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ts-node": "^10.9.2"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.0.5",
+    "ts-jest": "^29.4.0"
+  }
+}

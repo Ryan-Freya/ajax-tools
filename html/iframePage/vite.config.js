@@ -29,5 +29,9 @@ export default defineConfig({
         assetFileNames: 'static/css/[name]-[hash].[ext]',
       }
     },
+    // Prevent removing console.log during minification
+    esbuild: {
+      drop: []
+    }
   }
 });

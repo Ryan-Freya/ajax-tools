@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+import * as fs from 'fs';
+import * as path from 'path';
 
 // 定义源文件和目标文件的映射
 const publishFiles: string[] = [
@@ -16,7 +16,8 @@ const publishFiles: string[] = [
   'html/iframePage/dist',
   
   // icons 目录及其所有内容
-  'icons'
+  'icons',
+  'pageScripts'
 ];
 
 /**
@@ -110,7 +111,5 @@ function main(): void {
   console.log('发布文件已复制到 publish/ 目录');
 }
 
-// 执行主函数
-if (require.main === module) {
-  main();
-} 
+
+main(); 

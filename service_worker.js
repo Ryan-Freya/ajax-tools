@@ -39,3 +39,10 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log('%c Ajax Tools onInstalled', `color: #3aa757`);
 });
 
+self.addEventListener('error', event => {
+  console.error('[Service Worker] 捕获错误：', event.error);
+});
+self.addEventListener('unhandledrejection', event => {
+  console.error('[Service Worker] 未处理的Promise拒绝：', event.reason);
+});
+

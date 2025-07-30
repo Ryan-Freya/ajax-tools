@@ -9,6 +9,7 @@ import RequestDrawer from './RequestDrawer';
 import FilterPanel, { FilterConfig, FilterRule } from './FilterPanel';
 import { defaultInterface, AjaxDataListObject, DefaultInterfaceObject } from '../common/value';
 import { exportJSON } from '../main/utils/exportJson';
+import { parsePostData } from './utils/util';
 
 interface AddInterceptorParams {
   ajaxDataList: AjaxDataListObject[],
@@ -282,6 +283,38 @@ const generateMockNetworkData = () => {
   return mockRequests;
 };
 
+// 获取请求查询参数，包括 GET 和 POST
+const getRequestParams = (request: any) => {
+  const method = request.request.method.toLowerCase();
+  let params: any = {};
+  if (method === 'get') {
+    try {
+      const urlObj = new URL(request.request.url);
+      params = Object.fromEntries(urlObj.searchParams.entries());
+    } catch (e) {
+      params = {};
+    }
+  } else if (method === 'post') {
+    const postData = (request.request as any).postData;
+    if (postData) {
+      try {
+        console.log('postData', postData);
+        params = parsePostData(postData);
+      } catch {
+        console.error('parsePostData error', postData);
+        // 解析 form-urlencoded 数据
+        // params = Object.fromEntries(
+        //   postData.split('&').map(pair => {
+        //     const [key, value] = pair.split('=');
+        //     return [decodeURIComponent(key), decodeURIComponent(value)];
+        //   })
+        // );
+      }
+    }
+  }
+  return params;
+};
+
 const App = () => {
   const requestFinishedRef = useRef<any>(null);
   const [recording, setRecording] = useState(false);
@@ -474,6 +507,7 @@ const App = () => {
       getContent: (arg0: (content: any) => void) => void;
     }
   ) => {
+    console.log('record.request.url', record.request.url);
     const requestUrl = record.request.url.split('?')[0];
     const matchUrl = requestUrl.match('(?<=//.*/).+');
     if (record.getContent) {
@@ -648,6 +682,7 @@ const App = () => {
         url: string;
         method: string;
         response: any;
+        params: any;
       }>
     };
     
@@ -660,6 +695,7 @@ const App = () => {
       exportData.requests.push({
         url: getBaseUrl(request.request.url),
         method: method,
+        params: getRequestParams(request),
         response: responseContent // 已解析为原始格式（如果是JSON）
       });
     }
